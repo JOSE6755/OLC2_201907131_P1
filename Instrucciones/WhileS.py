@@ -2,6 +2,7 @@ from Abstract.instruccion import Instruccion
 from TS.Except import Excepcion
 from TS.Tipo import TIPO
 from TS.TablaSimbolos import TablaSimbolos
+from Instrucciones.Break import Brak
 
 class Whiless(Instruccion):
     def __init__(self,expresion,instr,fila,columna):
@@ -22,6 +23,7 @@ class Whiless(Instruccion):
                         if isinstance(res,Excepcion):
                             tree.getExcepciones().append(res)
                             tree.updateConsola(res.toString())
+                        if isinstance(res,Brak):return None
                 else:
                     break
             else:

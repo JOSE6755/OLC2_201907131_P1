@@ -1,23 +1,8 @@
-println("HOLA");
-println(75.5+0.5);
-println(75.5-0.5);
-println(10*5);
-println(15/3);
-println(2%3.5);
-println(5==7);
-x=5::Int64;
+x=0;
+while x<5
+if x==2
+break;
+end;
 println(x);
-if 3!=3 
-println("Adios amigos");
-elseif 7==7
-println("Que te valga we enserio");
-else
-println("Adiosito");
-end;
-while x>1
-println("Si entre al while");
-x=x-1;
-end;
-for i in 1:4
-println("Si entre al For :D");
+x=x+1;
 end;

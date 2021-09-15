@@ -23,7 +23,9 @@ reservadas={
     'end':'REND',
     'while':'RWHILE',
     'for':'RFOR',
-    'in':'RIN'
+    'in':'RIN',
+    'function':'RFUNCTION',
+    'break':'RBREAK'
 }
 
 tokens=[
@@ -42,15 +44,19 @@ tokens=[
     'DIV',
     'MOD',
     'POT',
+    'UMENOS',
     'MAY',
     'MEN',
+    'UNOT',
+    'OR',
+    'AND',
     'MAYOIGUAL',
     'MENOIGUAL',
     'IGUALES',
     'DIFERENTES',
     'DOSP',
-    'DPUNTOS'
-    
+    'DPUNTOS',
+    'COMA'
     
 ]+list(reservadas.values())
 t_PARAB=r'\('
@@ -71,6 +77,11 @@ t_DIFERENTES=r'\!\='
 t_IGUALAR=r'\='
 t_DOSP=r'::'
 t_DPUNTOS=r':'
+t_UNOT=r'!'
+t_OR=r'\|\|'
+t_AND=r'\&\&'
+t_UMENOS=r'-'
+t_COMA=r','
 
 
 def t_DECIMAL(t):
@@ -152,6 +163,21 @@ from Instrucciones.If import Rif
 from Instrucciones.Elseif import Elseif
 from Instrucciones.WhileS import Whiless
 from Instrucciones.Fors import Fors
+from Instrucciones.Funcion import Funcion
+from Instrucciones.Llamar import Llamar
+from Instrucciones.Break import Brak
+
+precedence = (
+    ('left','OR'),
+    ('left','AND'),
+    ('right','UNOT'),
+    ('left','MEN','MAY', 'IGUALES','DIFERENTES','MENOIGUAL','MAYOIGUAL'), 
+    ('left','MAS','MENOS'),
+    ('left','DIV','POR','MOD'),
+    ('nonassoc','POT'),
+    ('right','UMENOS'),
+    )
+
 def p_init(t):
     'init       : instrucciones'
     t[0]=t[1]
@@ -175,6 +201,9 @@ def p_instruccion(t):
                     | if_instr fins
                     | while_instr fins
                     | for_inst fins
+                    | funcion_dec fins
+                    | llamar_fun fins
+                    | BRAK fins
     
     '''
     t[0]=t[1]
@@ -197,7 +226,7 @@ def p_if_instr(t):
 def p_else_instr(t):
     '''if_instr : RIF expresion instrucciones RELSE instrucciones REND'''
     t[0]=Rif(t[2],t[3],t[5],None,t.lineno(1),find_column(input,t.slice[1]))
-def p_else_instr(t):
+def p_else_instr2(t):
     '''if_instr : RIF expresion instrucciones elifinst RELSE instrucciones REND'''
     t[0]=Rif(t[2],t[3],t[6],t[4],t.lineno(1),find_column(input,t.slice[1]))
 
@@ -225,7 +254,36 @@ def p_while(t):
 
 def p_for_inst(t):
     'for_inst : RFOR ID RIN expresion DPUNTOS expresion instrucciones REND '
-    t[0]=Fors(Identificador(t[2],t.lineno(1),find_column(input,t.slice[1])),t[4],t[6],t[7],None,t.lineno(1),find_column(input,t.slice[1]))
+    t[0]=Fors(t[2],t[4],t[6],t[7],None,t.lineno(1),find_column(input,t.slice[1]))
+
+def p_for_inst_2(t):
+    'for_inst : RFOR ID RIN expresion instrucciones REND '
+    t[0]=Fors(t[2],None,None,t[5],t[4],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_funcion_dec(t):
+    'funcion_dec : RFUNCTION ID PARAB parametros PARC instrucciones REND'
+    t[0]=Funcion(str(t[2]),t[4],t[6],t.lineno(1),find_column(input,t.slice[1]))
+    
+def p_funcion_dec2(t):
+    'funcion_dec : RFUNCTION ID PARAB PARC instrucciones REND'
+    t[0]=Funcion(str(t[2]),[],t[5],t.lineno(1),find_column(input,t.slice[1]))
+def p_parametros(t):
+    'parametros : parametros COMA parametro'
+    t[1].append(t[3])
+    t[0]=t[1]
+    
+def p_parametros2(t):
+    'parametros : parametro'
+    t[0]=[t[1]]
+    
+def p_parametro(t):
+    'parametro : ID DOSP TIPOS'
+    t[0]={"id":str(t[1]),"tipo":t[3]}
+    
+def p_llamar_fun(t):
+    'llamar_fun : ID PARAB PARC '
+    t[0]=Llamar(str(t[1]),[],t.lineno(1),find_column(input,t.slice[1]))
+    
 
 def p_DECLARACIONES(t):
     '''DECLARACIONES : DECLA_COM 
@@ -322,6 +380,10 @@ def p_primitivo_cadena(t):
 def p_primitivo_caracter(t):
     '''expresion : CHAR'''
     t[0] = Primitivos(TIPO.CHARACTER,str(t[1]).replace('\\n', '\n'), t.lineno(1), find_column(input, t.slice[1]))
+
+def p_break(t):
+    '''BRAK : RBREAK '''
+    t[0] = Brak(t.lineno(1),find_column(input,t.slice[1]))
     
     
 import ply.yacc as yacc
@@ -357,10 +419,18 @@ for error in errores:
     ast.getExcepciones().append(error)
     
 for instruccion in ast.getInstrucciones():
-    value = instruccion.interpretar(ast,TSGlobal)
-    if isinstance(value, Excepcion) :
-        ast.getExcepciones().append(value)
-        ast.updateConsola(value.toString())
+    if isinstance(instruccion,Funcion):
+        ast.setFuncion(instruccion)
+    
+
+for instruccion in ast.getInstrucciones():
+    
+    if not isinstance(instruccion,Funcion):
+        value = instruccion.interpretar(ast,TSGlobal)
+
+        if isinstance(value, Excepcion) :
+            ast.getExcepciones().append(value)
+            ast.updateConsola(value.toString())
 
 print(ast.getConsola())       
 

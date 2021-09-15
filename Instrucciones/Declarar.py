@@ -11,6 +11,7 @@ class Declarar(Instruccion):
         self.tipo = tipo
         self.fila = fila
         self.columna = columna
+        self.local=False
 
     def interpretar(self, tree, table):
         valor = self.expresion.interpretar(tree, table)
@@ -22,11 +23,22 @@ class Declarar(Instruccion):
             if isinstance(verifi, Excepcion):
                 return verifi
         elif self.tipo == None:
-            sim = Simbolo(str(self.id), self.expresion.tipo, False,False, self.fila, self.columna, valor)
-            verifi=table.actualizarTabla(sim)
-            if isinstance(verifi,Excepcion):
-                res=table.setTabla(sim)
-                if isinstance(res,Excepcion):
-                    return res
+            if self.local==True:
+                sim = Simbolo(str(self.id), self.expresion.tipo, False,False, self.fila, self.columna, valor)
+                res=table.locales(str(sim.id))
+                if res!=None:
+                    resu=table.actualizarTabla(sim)
+                    if isinstance(resu,Excepcion):return resu
+                else:
+                    resu=table.setTabla(sim)
+                    if isinstance(resu,Excepcion):return resu
+                return None
+            else:
+                sim = Simbolo(str(self.id), self.expresion.tipo, False,False, self.fila, self.columna, valor)
+                verifi=table.actualizarTabla(sim)
+                if isinstance(verifi,Excepcion):
+                    res=table.setTabla(sim)
+                    if isinstance(res,Excepcion):
+                        return res
         else:
             return Excepcion("Semantico", "Tipos no coinciden.", self.fila, self.columna)

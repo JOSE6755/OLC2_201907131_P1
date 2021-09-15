@@ -2,7 +2,8 @@ from Abstract.instruccion import Instruccion
 from TS.Except import Excepcion
 from TS.Tipo import TIPO
 from TS.TablaSimbolos import TablaSimbolos
-
+from Instrucciones.Declarar import Declarar
+from Instrucciones.Break import Brak
 
 class Rif(Instruccion):
     def __init__(self, expresion, instif, instelse, instelseif, fila, columna):
@@ -22,10 +23,13 @@ class Rif(Instruccion):
             if bool(cond):
                 nuevaT = TablaSimbolos(table)
                 for inst in self.instif:
+                    if isinstance(inst,Declarar):
+                        inst.local=True
                     res = inst.interpretar(tree, nuevaT)
                     if isinstance(res, Excepcion):
                         tree.getExcepciones().append(res)
                         tree.updateConsola(res.toString())
+                    if isinstance(res,Brak):return res
             else:
                 if self.instelseif != None:
                     for inst in self.instelseif:

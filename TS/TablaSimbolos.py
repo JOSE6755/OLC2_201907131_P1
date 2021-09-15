@@ -34,3 +34,12 @@ class TablaSimbolos:
             else:
                 tablaActual = tablaActual.anterior
         return Excepcion("Semantico", "Variable no encontrada ", simbolo.fila, simbolo.columna)
+    
+    def locales(self,id):
+        tablaActual = self
+        while tablaActual.anterior != None:
+            if id in tablaActual.tabla:
+                return tablaActual.tabla[id]
+            else:
+                tablaActual = tablaActual.anterior
+        return None
