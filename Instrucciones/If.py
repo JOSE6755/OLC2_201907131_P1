@@ -4,6 +4,7 @@ from TS.Tipo import TIPO
 from TS.TablaSimbolos import TablaSimbolos
 from Instrucciones.Declarar import Declarar
 from Instrucciones.Break import Brak
+from Instrucciones.Return import Return
 
 class Rif(Instruccion):
     def __init__(self, expresion, instif, instelse, instelseif, fila, columna):
@@ -30,6 +31,7 @@ class Rif(Instruccion):
                         tree.getExcepciones().append(res)
                         tree.updateConsola(res.toString())
                     if isinstance(res,Brak):return res
+                    if isinstance(res,Return):return res
             else:
                 if self.instelseif != None:
                     for inst in self.instelseif:
@@ -40,11 +42,15 @@ class Rif(Instruccion):
                                 if isinstance(res, Excepcion):
                                     tree.getExcepciones().append(res)
                                     tree.updateConsola(res.toString())
+                                if isinstance(res,Brak):return res
+                                if isinstance(res,Return):return res
                     
                 elif self.instelse != None:
                     for inst in self.instelse:
                         res = inst.interpretar(tree, table)
                         if isinstance(res, Excepcion):
                             return res
+                        if isinstance(res,Brak):return res
+                        if isinstance(res,Return):return res
         else:
             return Excepcion("Semantico", "Tipo d e dato no booleano en If.", self.fila, self.columna)

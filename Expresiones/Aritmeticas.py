@@ -60,6 +60,9 @@ class Aritmeticas(Instruccion):
             elif self.opIzq.tipo==TIPO.DECIMAL and self.opDer.tipo==TIPO.ENTERO:
                 self.tipo=TIPO.DECIMAL
                 return self.TipoVal(self.opIzq,izq)*self.TipoVal(self.opDer,der)
+            elif self.opIzq.tipo==TIPO.CADENA and self.opDer.tipo==TIPO.CADENA:
+                self.tipo=TIPO.CADENA
+                return self.TipoVal(self.opIzq,izq)+self.TipoVal(self.opDer,der)
         elif self.operador==OperadorAritmetico.DIV:
             if self.opIzq.tipo==TIPO.ENTERO and self.opDer.tipo==TIPO.ENTERO:
                 self.tipo=TIPO.ENTERO
@@ -86,6 +89,14 @@ class Aritmeticas(Instruccion):
             elif self.opIzq.tipo==TIPO.DECIMAL and self.opDer.tipo==TIPO.ENTERO:
                 self.tipo=TIPO.DECIMAL
                 return pow(self.TipoVal(self.opIzq,izq),self.TipoVal(self.opDer,der))
+            elif self.opIzq.tipo==TIPO.CADENA and self.opDer.tipo==TIPO.ENTERO:
+                self.tipo=TIPO.CADENA
+                x=self.TipoVal(self.opDer,der)
+                y=self.TipoVal(self.opIzq,izq)
+                st=""
+                for i in range(x):
+                    st+=y
+                return str(st)
         elif self.operador==OperadorAritmetico.MOD:
             if self.opIzq.tipo==TIPO.ENTERO and self.opDer.tipo==TIPO.ENTERO:
                 self.tipo=TIPO.ENTERO

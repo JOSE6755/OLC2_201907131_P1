@@ -25,7 +25,19 @@ reservadas={
     'for':'RFOR',
     'in':'RIN',
     'function':'RFUNCTION',
-    'break':'RBREAK'
+    'break':'RBREAK',
+    'log10':'RLOG10',
+    'log':'RLOG',
+    'sin':'RSEN',
+    'cos':'RCOS',
+    'tan':'RTAN',
+    'sqrt':'RSQ',
+    'return':'RRETURN',
+    'struct':'RSTRUCT',
+    'parse':'RPARSE',
+    'trunc':'RTRUNCAR',
+    'float':'RFLOAT',
+    'string':'RSTRINGS'
 }
 
 tokens=[
@@ -56,7 +68,8 @@ tokens=[
     'DIFERENTES',
     'DOSP',
     'DPUNTOS',
-    'COMA'
+    'COMA',
+    'PUNTO'
     
 ]+list(reservadas.values())
 t_PARAB=r'\('
@@ -82,6 +95,7 @@ t_OR=r'\|\|'
 t_AND=r'\&\&'
 t_UMENOS=r'-'
 t_COMA=r','
+t_PUNTO=r'.'
 
 
 def t_DECIMAL(t):
@@ -166,6 +180,19 @@ from Instrucciones.Fors import Fors
 from Instrucciones.Funcion import Funcion
 from Instrucciones.Llamar import Llamar
 from Instrucciones.Break import Brak
+from Nativas.Log10 import LOG10
+from Nativas.LogN import LOGN
+from Nativas.Seno import SENO
+from Nativas.Cos import COSENO
+from Nativas.Tangente import TANGENTE
+from Nativas.Sqrt import SQRT
+from Instrucciones.Return import Return
+from Instrucciones.Decla_Struct import Struct
+from Expresiones.Struct import AcceStruct
+from Instrucciones.Parsear import Parsear
+from Instrucciones.Truncar import Truncar
+from Instrucciones.Float import Float
+from Instrucciones.String import Strings
 
 precedence = (
     ('left','OR'),
@@ -204,6 +231,7 @@ def p_instruccion(t):
                     | funcion_dec fins
                     | llamar_fun fins
                     | BRAK fins
+                    | RET fins
     
     '''
     t[0]=t[1]
@@ -283,11 +311,31 @@ def p_parametro(t):
 def p_llamar_fun(t):
     'llamar_fun : ID PARAB PARC '
     t[0]=Llamar(str(t[1]),[],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_llamar_fun2(t):
+    'llamar_fun : ID PARAB parametros_llam PARC '
+    t[0]=Llamar(str(t[1]),t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+
+def p_parametrosllam(t):
+    'parametros_llam : parametros_llam COMA parametro_llam'
+    t[1].append(t[3])
+    t[0]=t[1]
     
+def p_parametros2llam(t):
+    'parametros_llam : parametro_llam'
+    t[0]=[t[1]]
+    
+def p_parametrollam(t):
+    'parametro_llam : expresion'
+    t[0]=t[1]
+    
+
 
 def p_DECLARACIONES(t):
     '''DECLARACIONES : DECLA_COM 
-                     | DECLA_SIM   
+                     | DECLA_SIM 
+                     | DECLA_STRUCT  
                      '''
     t[0]=t[1]
 def p_DECLA_SIM(t):
@@ -296,6 +344,59 @@ def p_DECLA_SIM(t):
 def p_DECLA_COM(t):
     'DECLA_COM : ID IGUALAR expresion DOSP TIPOS '
     t[0]=Declarar(str(t[1]),t[3],t[5],t.lineno(1),find_column(input,t.slice[1]))
+def p_DECLA_STRUCT(t):
+    'DECLA_STRUCT : RSTRUCT ID STRUCT_DECLAR REND'
+    t[0]=Struct(str(t[2]),False,t.lineno(1),find_column(input,t.slice[1]),t[3])
+
+
+def p_STRUCT_DECLAR(t):
+    'STRUCT_DECLAR : STRUCT_DECLAR D_STRUC'
+    t[1].append(t[2])
+    t[0]=t[1]
+def p_Struct_declar2(t):
+    'STRUCT_DECLAR : D_STRUC'
+    t[0]=[t[1]]
+def p_params_struc(t):
+    'D_STRUC : ID DOSP TIPOS PTCOMA'
+    t[0]=Declarar(str(t[1]),None,t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_parsear(t):
+    'expresion : RPARSE PARAB TIPOS COMA expresion PARC'
+    t[0]=Parsear(t[3],t[5],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_truncar(t):
+    'expresion : RTRUNCAR PARAB TIPOS COMA expresion PARC'
+    t[0]=Truncar(t[3],t[5],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_float(t):
+    'expresion : RFLOAT PARAB expresion PARC'
+    t[0]=Float(t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_string(t):
+    'expresion : RSTRINGS PARAB expresion PARC'
+    t[0]=Strings(t[3],t.lineno(1),find_column(input,t.slice[1]))
+    
+def p_llamar_fun3(t):
+    'expresion : ID PUNTO parametros_struc '
+    t[0]=AcceStruct(str(t[1]),t.lineno(1),find_column(input,t.slice[1]),t[3])
+
+
+def p_parametrosstruc(t):
+    'parametros_struc : parametros_struc PUNTO parametro_struc'
+    t[1].append(t[3])
+    t[0]=t[1]
+    
+def p_parametros2struc(t):
+    'parametros_struc : parametro_struc'
+    t[0]=[t[1]]
+    
+def p_parametrostruc(t):
+    'parametro_struc : ID'
+    t[0]=t[1]
+
+
+    
+    
     
 def p_TIPOS(t):
     '''TIPOS : RINT
@@ -354,13 +455,37 @@ def p_expresion(t):
     elif t[2]=="!=":
         t[0]=Relacionales(t[1],OperadorRelacional.DIFERENTE,t[3],t.lineno(2),find_column(input, t.slice[2]))
 
+def p_logi10(t):
+    'expresion : RLOG10 PARAB expresion PARC'
+    t[0]=LOG10(t[3],t.lineno(1),find_column(input,t.slice[1]))
 
+def p_logi(t):
+    'expresion : RLOG PARAB expresion COMA expresion PARC'
+    t[0]=LOGN(t[3],t[5],t.lineno(1),find_column(input,t.slice[1]))
 
+def p_seno(t):
+    'expresion : RSEN PARAB expresion PARC'
+    t[0]=SENO(t[3],t.lineno(1),find_column(input,t.slice[1]))
 
+def p_coseno(t):
+    'expresion : RCOS PARAB expresion PARC'
+    t[0]=COSENO(t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_tangente(t):
+    'expresion : RTAN PARAB expresion PARC'
+    t[0]=TANGENTE(t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_raiz(t):
+    'expresion : RSQ PARAB expresion PARC'
+    t[0]=SQRT(t[3],t.lineno(1),find_column(input,t.slice[1]))
+    
 def p_expresion_agrup(t):
     '''expresion    : PARAB expresion PARC'''
     t[0]=t[2]
 
+def p_llamar_exp(t):
+    'expresion : llamar_fun'
+    t[0]=t[1]
 def p_expresion_ID(t):
     'expresion : ID'
     t[0]=Identificador(t[1],t.lineno(1),find_column(input,t.slice[1]))
@@ -384,6 +509,10 @@ def p_primitivo_caracter(t):
 def p_break(t):
     '''BRAK : RBREAK '''
     t[0] = Brak(t.lineno(1),find_column(input,t.slice[1]))
+
+def p_retur(t):
+    'RET : RRETURN expresion'
+    t[0]=Return(t[2],t.lineno(1),find_column(input,t.slice[1]))
     
     
 import ply.yacc as yacc

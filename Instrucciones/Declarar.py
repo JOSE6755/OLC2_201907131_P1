@@ -1,7 +1,10 @@
 
+from typing import Dict
 from TS.Except import Excepcion
 from TS.Simbolo import Simbolo
 from Abstract.instruccion import Instruccion
+from TS.Tipo import TIPO
+
 
 
 class Declarar(Instruccion):
@@ -15,9 +18,15 @@ class Declarar(Instruccion):
 
     def interpretar(self, tree, table):
         valor = self.expresion.interpretar(tree, table)
+        
         if isinstance(valor, Excepcion):
             return valor
-        if self.expresion.tipo == self.tipo:
+        
+        if isinstance(valor,Dict):
+            simbolo=Simbolo(str(self.id),TIPO.STRUCT,False,False,self.fila,self.columna,valor['datos'],valor['mutable'])
+            res=table.setTabla(simbolo)
+            if isinstance(res,Excepcion):return res
+        elif self.expresion.tipo == self.tipo:
             sim = Simbolo(str(self.id), self.tipo, False, False, self.fila, self.columna, valor)
             verifi = table.setTabla(sim)
             if isinstance(verifi, Excepcion):
@@ -40,5 +49,7 @@ class Declarar(Instruccion):
                     res=table.setTabla(sim)
                     if isinstance(res,Excepcion):
                         return res
+        
+            
         else:
             return Excepcion("Semantico", "Tipos no coinciden.", self.fila, self.columna)
