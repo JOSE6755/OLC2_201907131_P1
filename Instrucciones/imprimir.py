@@ -9,14 +9,14 @@ class Imprimir(Instruccion):
         self.columna = columna
 
     def interpretar(self, tree, table):
-        value = self.expresion.interpretar(tree, table)  
-
-        if isinstance(value, Excepcion):
-            return value
-
-        if self.expresion.tipo == TIPO.ARREGLO:
-            return Excepcion("Semantico", "No se puede imprimir un arreglo completo", self.fila, self.columna)
-        elif self.expresion.tipo == TIPO.NULO:
-            return Excepcion("Semantico", "Null pointer, no se puede imprimir tipo NULL", self.fila, self.columna)
-        tree.updateConsola(value)
+        #value = self.expresion.interpretar(tree, table)  
+        texto=""
+        for value in self.expresion:
+            val=value.interpretar(tree,table)
+            texto+=str(val)
+            if isinstance(val,Excepcion):return val
+            if value.tipo==TIPO.NULO:
+                return Excepcion("Nulo","Valor nulo en una expresion",self.fila,self.columna)
+        
+        tree.updateConsola(texto)
         return None

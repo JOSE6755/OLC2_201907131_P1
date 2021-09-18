@@ -1,6 +1,7 @@
 
 
-from TS.Tipo import OperadorAritmetico,TIPO,OperadorRelacional
+from Instrucciones.Lower import Lower
+from TS.Tipo import OperadorAritmetico,TIPO,OperadorRelacional,OperadorLogico
 import re
 import sys
 
@@ -37,7 +38,13 @@ reservadas={
     'parse':'RPARSE',
     'trunc':'RTRUNCAR',
     'float':'RFLOAT',
-    'string':'RSTRINGS'
+    'string':'RSTRINGS',
+    'global':'RGLOBAL',
+    'local':'RLOCAL',
+    'true':'RTRUE',
+    'false':'RFALSE',
+    'uppercase':'RUPPERCASE',
+    'lowercase':'RLOWERCASE'
 }
 
 tokens=[
@@ -56,10 +63,9 @@ tokens=[
     'DIV',
     'MOD',
     'POT',
-    'UMENOS',
     'MAY',
     'MEN',
-    'UNOT',
+    'NOT',
     'OR',
     'AND',
     'MAYOIGUAL',
@@ -90,10 +96,10 @@ t_DIFERENTES=r'\!\='
 t_IGUALAR=r'\='
 t_DOSP=r'::'
 t_DPUNTOS=r':'
-t_UNOT=r'!'
+t_NOT=r'!'
 t_OR=r'\|\|'
 t_AND=r'\&\&'
-t_UMENOS=r'-'
+
 t_COMA=r','
 t_PUNTO=r'.'
 
@@ -193,7 +199,10 @@ from Instrucciones.Parsear import Parsear
 from Instrucciones.Truncar import Truncar
 from Instrucciones.Float import Float
 from Instrucciones.String import Strings
-
+from Instrucciones.DeclaLocal import DeclaracionLocal
+from Instrucciones.DeclaGlobal import DeclaracionGlobal
+from Expresiones.Logicas import Logica
+from Instrucciones.Uperr import Upper
 precedence = (
     ('left','OR'),
     ('left','AND'),
@@ -232,6 +241,8 @@ def p_instruccion(t):
                     | llamar_fun fins
                     | BRAK fins
                     | RET fins
+                    | declaracion_g fins
+                    | declaracion_l fins
     
     '''
     t[0]=t[1]
@@ -244,8 +255,22 @@ def p_instruccion_error(t):
     t[0] = ""
     
 def p_imprimirins(t):
-    'imprimirins    : RPRINTLN PARAB expresion PARC'
+    'imprimirins    : RPRINTLN PARAB contenido PARC'
     t[0]=Imprimir(t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+
+def p_contenidoimpr(t):
+    'contenido : contenido COMA valores'
+    t[1].append(t[3])
+    t[0]=t[1]
+
+def p_contenidoimpr2(t):
+    'contenido : valores'
+    t[0]=[t[1]]
+
+def p_valores(t):
+    'valores : expresion'
+    t[0]=t[1]
     
 def p_if_instr(t):
     '''if_instr : RIF expresion instrucciones REND'''
@@ -257,6 +282,10 @@ def p_else_instr(t):
 def p_else_instr2(t):
     '''if_instr : RIF expresion instrucciones elifinst RELSE instrucciones REND'''
     t[0]=Rif(t[2],t[3],t[6],t[4],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_else_instr3(t):
+    '''if_instr : RIF expresion instrucciones elifinst REND'''
+    t[0]=Rif(t[2],t[3],None,t[4],t.lineno(1),find_column(input,t.slice[1]))
 
 def p_elifinst(t):
     'elifinst : elifinst elifinstru'
@@ -368,6 +397,10 @@ def p_truncar(t):
     'expresion : RTRUNCAR PARAB TIPOS COMA expresion PARC'
     t[0]=Truncar(t[3],t[5],t.lineno(1),find_column(input,t.slice[1]))
 
+def p_truncar2(t):
+    'expresion : RTRUNCAR PARAB expresion PARC'
+    t[0]=Truncar(None,t[3],t.lineno(1),find_column(input,t.slice[1]))
+
 def p_float(t):
     'expresion : RFLOAT PARAB expresion PARC'
     t[0]=Float(t[3],t.lineno(1),find_column(input,t.slice[1]))
@@ -393,6 +426,23 @@ def p_parametros2struc(t):
 def p_parametrostruc(t):
     'parametro_struc : ID'
     t[0]=t[1]
+
+
+def p_declaracion_g(t):
+    'declaracion_g    : RGLOBAL ID IGUALAR expresion'
+    t[0] = DeclaracionGlobal(t[2],t.lineno(1),find_column(input,t.slice[1]),None,t[4])
+
+def p_declaracion_global_sim(t):
+    'declaracion_g    : RGLOBAL ID'
+    t[0] = DeclaracionGlobal(t[2],t.lineno(1),find_column(input,t.slice[1]),None,t[4])
+#Local
+def p_declaracion_local(t):
+    'declaracion_l   : RLOCAL ID IGUALAR expresion'
+    t[0] = DeclaracionLocal(t[2],t.lineno(1), find_column(input,t.slice[1]),None,t[4])
+
+def p_declaracion_local2(t):
+    'declaracion_l    : RLOCAL ID'
+    t[0] = DeclaracionLocal(t[2],t.lineno(1),find_column(input,t.slice[1]),None,None)
 
 
     
@@ -429,6 +479,9 @@ def p_expresion(t):
                     | expresion MENOIGUAL expresion
                     | expresion IGUALES expresion
                     | expresion DIFERENTES expresion
+                    | expresion AND expresion
+                    | expresion OR expresion
+                    
     '''
     if t[2]=="+":
         t[0]=Aritmeticas(t[1],OperadorAritmetico.MAS,t[3],t.lineno(2),find_column(input, t.slice[2]))
@@ -454,6 +507,10 @@ def p_expresion(t):
         t[0]=Relacionales(t[1],OperadorRelacional.IGUALIGUAL,t[3],t.lineno(2),find_column(input, t.slice[2]))
     elif t[2]=="!=":
         t[0]=Relacionales(t[1],OperadorRelacional.DIFERENTE,t[3],t.lineno(2),find_column(input, t.slice[2]))
+    elif t[2]=="&&":
+        t[0]=Logica(OperadorLogico.AND,t[1],t[3],t.lineno(2),find_column(input, t.slice[2]))
+    elif t[2]=="||":
+        t[0]=Logica(OperadorLogico.OR,t[1],t[3],t.lineno(2),find_column(input, t.slice[2]))
 
 def p_logi10(t):
     'expresion : RLOG10 PARAB expresion PARC'
@@ -478,6 +535,14 @@ def p_tangente(t):
 def p_raiz(t):
     'expresion : RSQ PARAB expresion PARC'
     t[0]=SQRT(t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_upper(t):
+    'expresion : RUPPERCASE PARAB expresion PARC'
+    t[0]=Upper(t[3],t.lineno(1),find_column(input,t.slice[1]))
+
+def p_lower(t):
+    'expresion : RLOWERCASE PARAB expresion PARC'
+    t[0]=Lower(t[3],t.lineno(1),find_column(input,t.slice[1]))
     
 def p_expresion_agrup(t):
     '''expresion    : PARAB expresion PARC'''
@@ -506,6 +571,24 @@ def p_primitivo_caracter(t):
     '''expresion : CHAR'''
     t[0] = Primitivos(TIPO.CHARACTER,str(t[1]).replace('\\n', '\n'), t.lineno(1), find_column(input, t.slice[1]))
 
+def p_primitivo_true(t):
+    '''expresion : RTRUE'''
+    t[0] = Primitivos(TIPO.BOOLEANO, True, t.lineno(1), find_column(input, t.slice[1]))
+
+def p_primitivo_false(t):
+    '''expresion : RFALSE'''
+    t[0] = Primitivos(TIPO.BOOLEANO, False, t.lineno(1), find_column(input, t.slice[1]))
+
+def p_expresion_unaria(t):
+    '''
+    expresion : MENOS expresion %prec UMENOS
+              | NOT expresion %prec UNOT 
+    '''
+    if t[1] == "-":
+        t[0] = Aritmeticas(t[2],OperadorAritmetico.UMENOS,None,t.lineno(1),find_column(input,t.slice[1]))
+    elif t[1] == "!":
+        t[0] = Logica(OperadorLogico.NOT,t[2],None,t.lineno(1),find_column(input,t.slice[1]))
+
 def p_break(t):
     '''BRAK : RBREAK '''
     t[0] = Brak(t.lineno(1),find_column(input,t.slice[1]))
@@ -532,9 +615,10 @@ def parse(inp) :
     global input
     input = inp
     return parser.parse(inp)
-
 f = open("./entrada.txt", "r")
 entrada = f.read()
+
+
 
 from TS.Arbol import Arbol
 from TS.TablaSimbolos import TablaSimbolos
@@ -546,14 +630,14 @@ ast.setTSglobal(TSGlobal)
 
 for error in errores:
     ast.getExcepciones().append(error)
-    
+        
 for instruccion in ast.getInstrucciones():
     if isinstance(instruccion,Funcion):
         ast.setFuncion(instruccion)
-    
+        
 
 for instruccion in ast.getInstrucciones():
-    
+        
     if not isinstance(instruccion,Funcion):
         value = instruccion.interpretar(ast,TSGlobal)
 
@@ -561,6 +645,6 @@ for instruccion in ast.getInstrucciones():
             ast.getExcepciones().append(value)
             ast.updateConsola(value.toString())
 
-print(ast.getConsola())       
+print(ast.getConsola())      
 
-    
+        

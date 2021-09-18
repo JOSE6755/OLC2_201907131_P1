@@ -1,1 +1,15 @@
-println("hola tu"^3);
+x = (3*5)::Int64;
+str = "Saludo";
+function ejemplo()
+    global str="Ejemplo";
+    x = 0;
+    for i in 1:5
+        local x;
+        x = i * 2; 
+        println(x);
+    end;
+    println(x);
+end;
+ejemplo();
+println(x);
+println(str);

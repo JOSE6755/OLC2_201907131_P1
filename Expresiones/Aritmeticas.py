@@ -110,6 +110,16 @@ class Aritmeticas(Instruccion):
             elif self.opIzq.tipo==TIPO.DECIMAL and self.opDer.tipo==TIPO.ENTERO:
                 self.tipo=TIPO.DECIMAL
                 return self.TipoVal(self.opIzq,izq)%self.TipoVal(self.opDer,der)
+        
+        elif self.operador == OperadorAritmetico.UMENOS:
+            if self.opIzq.tipo == TIPO.ENTERO:
+                self.tipo = TIPO.ENTERO
+                return - self.TipoVal(self.opIzq, izq)
+            elif self.opIzq.tipo == TIPO.DECIMAL:
+                self.tipo = TIPO.DECIMAL
+                return - self.TipoVal(self.opIzq, izq)
+        else:
+            return Excepcion("Semantico", "Operador no definido.", self.fila,self.columna)
             
             
                 

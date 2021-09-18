@@ -45,6 +45,7 @@ class Declarar(Instruccion):
             else:
                 sim = Simbolo(str(self.id), self.expresion.tipo, False,False, self.fila, self.columna, valor)
                 verifi=table.actualizarTabla(sim)
+                
                 if isinstance(verifi,Excepcion):
                     res=table.setTabla(sim)
                     if isinstance(res,Excepcion):

@@ -12,8 +12,8 @@ class Truncar(Instruccion):
     def interpretar(self, tree, table):
         val=self.cadena.interpretar(tree,table)
         if self.cadena.tipo==TIPO.DECIMAL:
-            if self.tipo==TIPO.ENTERO:
-                return math.trunc(val)
+            
+            return math.trunc(val)
             
         else:return Excepcion("Semantico","La funcion parse es unicamente para String",self.fila,self.columna)
                 

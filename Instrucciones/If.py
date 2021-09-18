@@ -44,6 +44,10 @@ class Rif(Instruccion):
                                     tree.updateConsola(res.toString())
                                 if isinstance(res,Brak):return res
                                 if isinstance(res,Return):return res
+                    if self.instelse != None:
+                        for instr in self.instelse:
+                            result = instr.interpretar(tree,table)
+                            if isinstance(result,Excepcion): return result  
                     
                 elif self.instelse != None:
                     for inst in self.instelse:

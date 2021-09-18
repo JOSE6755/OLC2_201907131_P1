@@ -34,8 +34,8 @@ class TablaSimbolos:
             else:
                 tablaActual = tablaActual.anterior
         return Excepcion("Semantico", "Variable no encontrada ", simbolo.fila, simbolo.columna)
-    
-    def locales(self,id):
+
+    def locales(self, id):
         tablaActual = self
         while tablaActual.anterior != None:
             if id in tablaActual.tabla:
@@ -43,3 +43,21 @@ class TablaSimbolos:
             else:
                 tablaActual = tablaActual.anterior
         return None
+
+
+def getTablasLocales(self, id):
+    tablaActual = self
+    while tablaActual.anterior != None:
+        if id in tablaActual.tabla:
+            return tablaActual.tabla[id]
+        else:
+            tablaActual = tablaActual.anterior
+    return None
+
+
+def actualizarGlobal(self, simbolo):
+    tablaActual = self
+    while tablaActual.anterior != None:
+        tablaActual = tablaActual.anterior
+    tablaActual.tabla[simbolo.identificador].setValor(simbolo.expresion.valor)
+    return None

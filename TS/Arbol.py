@@ -5,6 +5,7 @@ class Arbol:
         self.funciones=[]
         self.consola=""
         self.TSglobal=None
+        self.variablesGlobales =[]
         
     def getInstrucciones(self):
         return self.instrucciones
@@ -39,3 +40,12 @@ class Arbol:
             if fun.nombre==nombre:
                 return fun
         return None
+
+    def getGlobal(self, nombre):
+        for globales in self.variablesGlobales:
+            if globales.id == nombre:
+                return globales
+        return None
+    
+    def addGlobal(self, globales):
+        self.variablesGlobales.append(globales)
